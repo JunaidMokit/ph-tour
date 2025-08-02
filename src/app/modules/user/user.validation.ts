@@ -1,4 +1,5 @@
 import z from "zod"
+import { IsActive, Role } from "./user.interface";
 export const createUserZodSchema = z.object({
     name: z.string({
         invalid_type_error: "Name must be a string"
@@ -52,9 +53,17 @@ export const updateUserZodSchema = z.object({
 
     address: z.string().optional(),
 
-    role: Role;
-    isDeleted?: string;
-    isActive?: IsActive;
-    isVerified?: string;
+    role: z
+        .enum(Object.values(Role) as [string]),
+    isActive: z
+        .enum(Object.values(IsActive) as [string])
+        .optional(),
+    isDeleted: z
+        .boolean({ invalid_type_error: "Is deleted must be true or false" })
+        .optional(),
+
+    isVerified: z
+        .boolean({ invalid_type_error: "IsVarified must be true or false" })
+        .optional()
 
 });
