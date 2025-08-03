@@ -4,6 +4,8 @@ import { User } from "../app/modules/user/user.model"
 import httpStatus from "http-status-codes"
 import bcryptjs from "bcryptjs"
 import AppError from "../app/modules/errorHelpers/AppError"
+import jwt from "jsonwebtoken"
+import { generateToken } from "../uitiles/jwt"
 
 const credentialsLogin = async (payload: Partial<IUser>) => {
     const { email, password } = payload;
@@ -20,8 +22,21 @@ const credentialsLogin = async (payload: Partial<IUser>) => {
         throw new AppError(httpStatus.BAD_REQUEST, "Incorrect Password")
     }
 
+    const jwtPayload = {
+        userId: isUserExit._id,
+        email: isUserExit.email,
+        role: isUserExit.role
+    }
+
+    // const accessToken = jwt.sign(jwtPayload, "secret", {
+    //     expiresIn: "1d"
+    // })
+    const accessToken = generateToken(jwtPayload, "access_secret", "1d")
+
+
+
     return {
-        email: isUserExit.email
+        email: accessToken
     }
 
 }
