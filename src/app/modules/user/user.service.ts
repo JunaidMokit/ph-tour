@@ -26,43 +26,12 @@ const createUser = async (payload: Partial<IUser>) => {
     return user;
 }
 
-// const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken: JwtPayload) => {
-//     const ifUserExist = await User.findById(userId);
-//     if (!ifUserExist) {
-//         throw new AppError(httpStatus.BAD_REQUEST, "You are not Authorized")
-//     }
-
-//     if (payload.role) {
-//         if (decodedToken.role === Role.USER || decodedToken.role === Role.GUIDE) {
-//             throw new AppError(httpStatus.BAD_REQUEST, "You are not Authorized")
-//         }
-
-//         if (decodedToken.role === Role.SUPER_ADMIN || decodedToken.role === Role.ADMIN) {
-//             throw new AppError(httpStatus.BAD_REQUEST, "You are not Authorized")
-//         }
-//     }
-//     if (payload.isActive || payload.isDeleted || payload.isVerified) {
-//         if (decodedToken.role === Role.USER || decodedToken.role === Role.GUIDE) {
-//             throw new AppError(httpStatus.BAD_REQUEST, "You are not Authorized")
-//         }
-
-//     }
-
-//     if (payload.password) {
-//         payload.password = await bcryptjs.hash(payload.password, Number(10))
-//     }
-//     const newUpdateUser = await User.findByIdAndUpdate(userId, payload, { new: true, runValidators: true })
-
-//     return updateUser
-
-// }
 
 const updateUser = async (
     userId: string,
     payload: Partial<IUser>,
     decodedToken: JwtPayload
 ) => {
-    // Check user exists
     const ifUserExist = await User.findById(userId);
     if (!ifUserExist) {
         throw new AppError(httpStatus.BAD_REQUEST, "User not found");
@@ -71,6 +40,15 @@ const updateUser = async (
     // Only SUPER_ADMIN can update anything
     if (decodedToken.role !== Role.SUPER_ADMIN) {
         throw new AppError(httpStatus.FORBIDDEN, "Only SUPER_ADMIN is authorized to update users");
+    }
+
+    // 🚫 Prevent creating a second SUPER_ADMIN
+    if (payload.role === Role.SUPER_ADMIN) {
+        const existingSuperAdmin = await User.findOne({ role: Role.SUPER_ADMIN });
+        // If someone else is already SUPER_ADMIN and it's not this user, block it
+        if (existingSuperAdmin && existingSuperAdmin._id.toString() !== userId) {
+            throw new AppError(httpStatus.BAD_REQUEST, "There can only be one SUPER_ADMIN");
+        }
     }
 
     // Hash password if updating
@@ -86,6 +64,7 @@ const updateUser = async (
 
     return updatedUser;
 };
+
 
 
 const getAllUsers = async () => {

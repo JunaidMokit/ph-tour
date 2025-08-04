@@ -22,6 +22,7 @@ export const checkAuth = (...authRoles: string[]) => async (req: Request, res: R
         }
 
 
+        req.user = verifiedToken
 
         // return UserControllers.getAllUsers(req, res, next);
         next()
