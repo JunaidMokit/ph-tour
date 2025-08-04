@@ -4,6 +4,8 @@ import httpStatus from "http-status-codes"
 import { UserService } from "./user.service";
 import { catchAsync } from "../../../uitiles/catchAsync";
 import { sendResponse } from "../../../uitiles/sendResponse";
+import { verifyToken } from "../../../uitiles/jwt";
+import { JwtPayload } from "jsonwebtoken";
 
 
 // const createUser = async (req: Request, res: Response, next: NextFunction) => {
@@ -33,6 +35,22 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
     })
 })
 
+const updateUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.params.id;
+    console.log("userid", userId)
+    const token = req.headers.authorization;
+    const verifiedToken = verifyToken(token as string, "access_secret") as JwtPayload
+    const payload = req.body;
+    const user = await UserService.updateUser(userId, payload, verifiedToken)
+
+    sendResponse(res, {
+        success: true,
+        statusCode: httpStatus.CREATED,
+        message: "User Updated Successfully",
+        data: user
+    })
+})
+
 const getAllUsers = (async (req: Request, res: Response, next: NextFunction) => {
     const result = await UserService.getAllUsers();
 
@@ -49,5 +67,6 @@ const getAllUsers = (async (req: Request, res: Response, next: NextFunction) => 
 
 export const UserControllers = {
     createUser,
-    getAllUsers
+    getAllUsers,
+    updateUser
 }
