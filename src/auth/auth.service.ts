@@ -1,11 +1,12 @@
 
-import { IUser } from "../app/modules/user/user.interface"
+import { IsActive, IUser } from "../app/modules/user/user.interface"
 import { User } from "../app/modules/user/user.model"
 import httpStatus from "http-status-codes"
 import bcryptjs from "bcryptjs"
 import AppError from "../app/modules/errorHelpers/AppError"
-import jwt from "jsonwebtoken";
-import { generateToken } from "../uitiles/jwt"
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { generateToken, verifyToken } from "../uitiles/jwt"
+import { createNewAccessTokenWithRefreshToken, createUserTokens } from "../uitiles/userToke"
 
 
 
@@ -24,26 +25,29 @@ const credentialsLogin = async (payload: Partial<IUser>) => {
         throw new AppError(httpStatus.BAD_REQUEST, "Incorrect Password")
     }
 
-    const jwtPayload = {
-        userId: isUserExit._id,
-        email: isUserExit.email,
-        role: isUserExit.role
-    }
+    const userTokens = createUserTokens(isUserExit)
 
-    // const accessToken = jwt.sign(jwtPayload, "secret", {
-    //     expiresIn: "1d"
-    // })
-    const accessToken = generateToken(jwtPayload, "access_secret", "7d")
+    delete isUserExit.password;
 
-
+    const { password: pass, ...rest } = isUserExit.toObject();
 
 
     return {
-        accessToken
+        accessToken: userTokens.accessToken,
+        refreshToken: userTokens.refreshToken,
+        user: rest
     }
 
 }
 
+const getNewAccessToken = async (refreshToken: string) => {
+
+    const newAccessToken = await createNewAccessTokenWithRefreshToken(refreshToken)
+    return { accessToken: newAccessToken }
+
+}
+
 export const AuthService = {
-    credentialsLogin
+    credentialsLogin,
+    getNewAccessToken
 }
